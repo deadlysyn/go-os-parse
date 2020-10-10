@@ -56,6 +56,7 @@ func parseField(raw [][]byte, field string) ([]byte, error) {
 	for _, v := range raw {
 		if bytes.HasPrefix(v, []byte(fmt.Sprintf("%s=", field))) {
 			parsed = bytes.Split(v, []byte("="))[1]
+			parsed = bytes.Trim(parsed, "\" ")
 			return bytes.ToLower(parsed), nil
 		}
 	}
