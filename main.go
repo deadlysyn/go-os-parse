@@ -1,110 +1,16 @@
 package main
 
 import (
-	"bytes"
-	"errors"
+	"github.com/deadlysyn/go-os-parse/detector"
+
 	"fmt"
 	"log"
-	"os"
-	"strconv"
 )
 
 func main() {
-
-	p, err := packageManagerCmd()
+	p, err := detector.PackageManagerCmd()
 	if err != nil {
 		log.Fatal(err)
 	}
 	fmt.Printf("Detected package manager: %q\n", p)
-}
-
-func packageManagerCmd() (string, error) {
-	var cmd string
-
-	data, err := readReleaseFile()
-	if err != nil {
-		return cmd, err
-	}
-	raw := bytes.Split(data, []byte("\n"))
-
-	id, err := parseField(raw, "ID")
-	if err != nil {
-		return cmd, err
-	}
-
-	switch string(id) {
-	case "alpine":
-		cmd = "apk info -vv"
-	case "debian", "ubuntu":
-		cmd = "dpkg-query --show --showformat='${Package} ${Version}\n'"
-	case "centos", "fedora", "rhel":
-		version, err := parseField(raw, "VERSION_ID")
-		if err != nil {
-			return cmd, err
-		}
-		if v, _ := strconv.Atoi(string(version)); v <= 7 {
-			cmd = "yum list installed"
-		} else {
-			cmd = "dnf list installed"
-		}
-	default:
-		return cmd, errors.New("Failed to detect package manager")
-	}
-
-	return cmd, nil
-}
-
-func parseField(raw [][]byte, field string) ([]byte, error) {
-	var parsed []byte
-	for _, v := range raw {
-		if bytes.HasPrefix(v, []byte(fmt.Sprintf("%s=", field))) {
-			parsed = bytes.Split(v, []byte("="))[1]
-			return bytes.ToLower(parsed), nil
-		}
-	}
-	return parsed, fmt.Errorf("Failed to parse %s field", field)
-}
-
-// Try to read os-release file.
-// https://www.freedesktop.org/software/systemd/man/os-release.html
-func readReleaseFile() ([]byte, error) {
-	var data []byte
-
-	// Supported locations, in order of precedence.
-	files := []string{
-		"/etc/os-release",
-		"/usr/lib/os-release",
-	}
-
-	var file string
-	for _, f := range files {
-		if _, err := os.Stat(f); !os.IsNotExist(err) {
-			// Must stop at first match...
-			file = f
-			break
-		}
-	}
-
-	if file == "" {
-		return data, errors.New("Unable to read os-release")
-	}
-
-	f, err := os.Open(file)
-	if err != nil {
-		return data, err
-	}
-	defer f.Close()
-
-	s, err := f.Stat()
-	if err != nil {
-		return data, err
-	}
-
-	data = make([]byte, s.Size())
-	_, err = f.Read(data)
-	if err != nil {
-		return data, err
-	}
-
-	return data, nil
 }
