@@ -29,17 +29,27 @@ func PackageManagerCmd() (string, error) {
 	case "arch", "manjaro":
 		cmd = "pacman"
 	case "debian", "ubuntu", "mint", "linspire":
-		cmd = "apt"
+		cmd = "dpkg"
 	case "suse":
 		cmd = "yast"
 	case "gentoo":
 		cmd = "emerge"
-	case "centos", "fedora", "rhel", "redhat":
+	case "centos", "rhel", "redhat":
 		version, err := parseField(raw, "VERSION_ID")
 		if err != nil {
 			return cmd, err
 		}
 		if v, _ := strconv.Atoi(string(version)); v <= 7 {
+			cmd = "yum"
+		} else {
+			cmd = "dnf"
+		}
+	case "fedora":
+		version, err := parseField(raw, "VERSION_ID")
+		if err != nil {
+			return cmd, err
+		}
+		if v, _ := strconv.Atoi(string(version)); v <= 22 {
 			cmd = "yum"
 		} else {
 			cmd = "dnf"
