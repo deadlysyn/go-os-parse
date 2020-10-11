@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 )
 
 // Try to read os-release file.
@@ -53,8 +54,9 @@ func readReleaseFile() ([]byte, error) {
 
 func parseField(raw [][]byte, field string) ([]byte, error) {
 	var parsed []byte
+
 	for _, v := range raw {
-		if bytes.HasPrefix(v, []byte(fmt.Sprintf("%s=", field))) {
+		if matched, _ := regexp.Match(fmt.Sprintf("^%s=.*$", field), v); matched {
 			parsed = bytes.Split(v, []byte("="))[1]
 			parsed = bytes.Trim(parsed, "\" ")
 			return bytes.ToLower(parsed), nil
